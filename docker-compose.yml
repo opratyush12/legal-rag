@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  # ── FastAPI backend ──────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lexsearch-backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    volumes:
+      # Persist FAISS index between restarts
+      - ./backend/index_store:/app/index_store
+      # Mount PDF directory (local dev — swap for S3 in prod)
+      - type: bind
+        source: ${PDF_LOCAL_DIR:-./pdfs}
+        target: /data/pdfs
+        read_only: true
+    environment:
+      - PDF_LOCAL_DIR=/data/pdfs
+      - INDEX_DIR=/app/index_store
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── React frontend (Nginx) ───────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lexsearch-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  index_store:
