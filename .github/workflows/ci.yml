@@ -6,6 +6,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_call:      # allow deploy.yml to call this as a reusable workflow
 
 concurrency:
   group: ci-${{ github.ref }}
