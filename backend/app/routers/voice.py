@@ -20,8 +20,8 @@ async def text_to_speech(req: TTSRequest):
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     except Exception as exc:
-        logger.error("TTS synthesis failed: %s", exc, exc_info=True)
-        raise HTTPException(500, f"TTS failed: {exc}")
+        logger.error("TTS synthesis failed: %s", exc)
+        raise HTTPException(500, "Voice synthesis is temporarily unavailable.")
     return Response(content=audio, media_type="audio/mpeg")
 
 

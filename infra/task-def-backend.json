@@ -1,0 +1,71 @@
+{
+  "family": "legal-rag-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::597093240591:role/legal-rag-ecs-execution",
+  "taskRoleArn": "arn:aws:iam::597093240591:role/legal-rag-ecs-task",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "PLACEHOLDER",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "PDF_LOCAL_DIR", "value": "/data/pdfs" },
+        { "name": "INDEX_DIR", "value": "/data/index_store" },
+        { "name": "PDF_STORAGE_BACKEND", "value": "local" },
+        { "name": "CORS_ORIGINS", "value": "[\"https://yourdomain.com\"]" },
+        { "name": "UVICORN_WORKERS", "value": "2" },
+        { "name": "PORT", "value": "8000" }
+      ],
+      "secrets": [
+        {
+          "name": "GROQ_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:597093240591:secret:legal-rag/groq-api-key"
+        }
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "efs-data",
+          "containerPath": "/data",
+          "readOnly": false
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/legal-rag-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "backend"
+        }
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "efs-data",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-PLACEHOLDER",
+        "transitEncryption": "ENABLED"
+      }
+    }
+  ],
+  "tags": [
+    { "key": "Project", "value": "legal-rag" },
+    { "key": "Environment", "value": "prod" }
+  ]
+}

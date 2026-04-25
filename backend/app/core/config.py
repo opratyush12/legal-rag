@@ -21,10 +21,10 @@ class Settings(BaseSettings):
     )
 
     # ── Data ───────────────────────────────────────────────────────────────────
-    CSV_PATH: str = r"C:\Users\PratyushOjha\Documents\projectPractice\supream_court_data\supreme_court_clean_engilsh.csv"
+    CSV_PATH: str = "/data/csv/supreme_court_clean_english.csv"
 
     PDF_STORAGE_BACKEND: str = "local"
-    PDF_LOCAL_DIR: str = r"C:\Users\PratyushOjha\Documents\projectPractice\supream_court_data\processed_data"
+    PDF_LOCAL_DIR: str = "/data/pdfs"
 
     S3_BUCKET: str = ""
     S3_PREFIX: str = "pdfs/"
@@ -71,21 +71,36 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
     GROQ_MAX_TOKENS: int = 1024
+    GROQ_FALLBACK_MODELS: List[str] = ["llama-3.1-8b-instant", "gemma2-9b-it"]
+    GROQ_SUMMARY_MAX_TOKENS: int = 350
+    GROQ_SUMMARY_TEMPERATURE: float = 0.2
+    GROQ_CHAT_TEMPERATURE: float = 0.3
+    GROQ_ASSISTANT_TEMPERATURE: float = 0.4
+    CHAT_CONTEXT_MAX_CHARS: int = 5500
+    SUMMARY_CONTEXT_MAX_CHARS: int = 1800
+
+    # ── Upload / PDF ───────────────────────────────────────────────────────────
+    MAX_PDF_MB: int = 20
+    PREVIEW_MAX_CHARS: int = 4000
+
+    # ── Confidence thresholds ──────────────────────────────────────────────────
+    CONFIDENCE_HIGH_THRESHOLD: float = 4.0
+    CONFIDENCE_MEDIUM_THRESHOLD: float = 0.0
 
     # ── TTS ────────────────────────────────────────────────────────────────────
     TTS_VOICE: str = "hi-IN-SwaraNeural"
 
     # ── Server ─────────────────────────────────────────────────────────────────
-    CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: List[str] = []
 
-    @field_validator("CORS_ORIGINS", mode="before")
+    @field_validator("CORS_ORIGINS", "GROQ_FALLBACK_MODELS", mode="before")
     @classmethod
-    def parse_cors(cls, v):
+    def parse_str_list(cls, v):
         if isinstance(v, str):
             try:
                 return json.loads(v)
             except Exception:
-                return [i.strip() for i in v.split(",")]
+                return [i.strip() for i in v.split(",") if i.strip()]
         return v
 
     @property

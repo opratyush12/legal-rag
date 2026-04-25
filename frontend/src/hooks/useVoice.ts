@@ -17,10 +17,26 @@ import toast from 'react-hot-toast'
 import { synthesizeSpeech } from '@/lib/api'
 import { stripMarkdownForSpeech } from '@/lib/textUtils'
 
+// Web Speech API type shims (not all TS versions include these in DOM lib)
+type SpeechRecognitionType = typeof window extends { SpeechRecognition: infer T } ? T : any
+
+interface ISpeechRecognition extends EventTarget {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((ev: any) => void) | null
+  onerror: ((ev: any) => void) | null
+  onend: (() => void) | null
+  start(): void
+  stop(): void
+  abort(): void
+}
+
 declare global {
   interface Window {
-    SpeechRecognition:       typeof SpeechRecognition | undefined
-    webkitSpeechRecognition: typeof SpeechRecognition | undefined
+    SpeechRecognition:       { new(): ISpeechRecognition } | undefined
+    webkitSpeechRecognition: { new(): ISpeechRecognition } | undefined
   }
 }
 
@@ -37,7 +53,7 @@ function voiceForText(text: string): string {
 export function useVoice() {
   const [listening,  setListening]  = useState(false)
   const [speaking,   setSpeaking]   = useState(false)
-  const recognitionRef              = useRef<SpeechRecognition | null>(null)
+  const recognitionRef              = useRef<ISpeechRecognition | null>(null)
   const audioRef                    = useRef<HTMLAudioElement | null>(null)
 
   // ── STT ────────────────────────────────────────────────────────────────────
@@ -56,13 +72,13 @@ export function useVoice() {
       recognition.interimResults  = false
       recognition.maxAlternatives = 1
 
-      recognition.onresult = (e: SpeechRecognitionEvent) => {
+      recognition.onresult = (e: any) => {
         const transcript = e.results[0][0].transcript
         onResult(transcript)
         setListening(false)
       }
 
-      recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
+      recognition.onerror = (e: any) => {
         if ((e.error === 'language-not-supported' || e.error === 'no-speech') && !forceLang) {
           // Retry once with Indian English
           startListening(onResult, 'en-IN')

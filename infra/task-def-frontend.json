@@ -1,0 +1,40 @@
+{
+  "family": "legal-rag-frontend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::597093240591:role/legal-rag-ecs-execution",
+  "containerDefinitions": [
+    {
+      "name": "frontend",
+      "image": "PLACEHOLDER",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -q --spider http://localhost:80/ || exit 1"],
+        "interval": 30,
+        "timeout": 3,
+        "retries": 3,
+        "startPeriod": 10
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/legal-rag-frontend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "frontend"
+        }
+      }
+    }
+  ],
+  "tags": [
+    { "key": "Project", "value": "legal-rag" },
+    { "key": "Environment", "value": "prod" }
+  ]
+}

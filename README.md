@@ -200,6 +200,86 @@ For large corpora, the index builder automatically uses **IVFFlat** (10× faster
 
 ---
 
+## AWS Deployment (ECS Fargate)
+
+Production deployment runs on ECS Fargate behind an ALB, with EFS for persistent data and Secrets Manager for the API key. Estimated cost: **~$23/month**.
+
+### Architecture
+
+```
+GitHub Actions ──CI──▸ ECR (backend + frontend images)
+                              ▼
+Route 53 (opt) ──▸ ALB ──▸ Backend Fargate :8000  ──▸ EFS (index + PDFs)
+                    │
+                    └──▸ Frontend Fargate :80
+                    └──▸ S3 (PDF archive)
+```
+
+### Prerequisites
+
+- AWS CLI configured (`aws configure` or SSO)
+- Terraform >= 1.5
+- Docker running
+- A GitHub repo with Actions enabled
+
+### One-Time Setup
+
+```bash
+# 1. Copy and fill in Terraform variables
+cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars
+# Edit terraform.tfvars with your AWS account, GitHub org, and secret ARN
+
+# 2. Run the bootstrap script (creates OIDC provider, secret, infra, pushes images)
+chmod +x infra/scripts/bootstrap.sh
+./infra/scripts/bootstrap.sh
+```
+
+The bootstrap script will:
+1. Create the GitHub OIDC identity provider in IAM
+2. Store your `GROQ_API_KEY` in Secrets Manager
+3. Run `terraform apply` to create VPC, ALB, ECS, ECR, EFS, S3, IAM
+4. Build and push Docker images to ECR
+5. Start the ECS services
+
+### GitHub Secrets
+
+After bootstrap, add one secret to your GitHub repo:
+
+| Secret | Value |
+|--------|-------|
+| `AWS_ROLE_ARN` | Output of `terraform output github_actions_role_arn` |
+
+CI runs on every PR (lint + test). Deploy runs automatically on push to `main`.
+
+### Rebuilding the FAISS Index
+
+```bash
+chmod +x infra/scripts/rebuild-index.sh
+./infra/scripts/rebuild-index.sh
+```
+
+This runs `build_index.py` as a one-off ECS task using the same backend image and EFS volume.
+
+### Cost Breakdown
+
+| Resource | Choice | Est. Cost |
+|----------|--------|-----------|
+| Fargate backend | 0.25 vCPU / 0.5 GB | ~$9/mo |
+| Fargate frontend | 0.25 vCPU / 0.5 GB | ~$9/mo |
+| ALB | 1 ALB, low traffic | ~$4/mo |
+| ECR | 2 repos, < 1 GB | Free tier |
+| EFS | ~1 GB | ~$0.30/mo |
+| S3 | PDF archive | < $1/mo |
+| **Total** | | **~$23/mo** |
+
+### Scaling
+
+- Auto-scaling is not enabled by default (`desiredCount=1`).
+- To add CPU-based scaling, set target-tracking policy on the ECS services (target 70% CPU).
+- To add a staging environment, duplicate the Terraform with `environment = "staging"`.
+
+---
+
 ## API Reference
 
 | Method | Endpoint                          | Description                  |

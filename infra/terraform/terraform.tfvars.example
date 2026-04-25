@@ -1,0 +1,21 @@
+# ── infra/terraform/terraform.tfvars.example ──────────────────────────────────
+# Copy to terraform.tfvars and fill in your values.
+# DO NOT commit terraform.tfvars — it contains sensitive references.
+
+aws_region  = "us-east-1"
+project     = "legal-rag"
+environment = "prod"
+
+# GitHub OIDC (for CI/CD deploy role)
+github_org  = "your-github-username"
+github_repo = "legal-rag"
+
+# Secrets Manager ARN for GROQ_API_KEY
+# Create first: aws secretsmanager create-secret --name legal-rag/groq-api-key --secret-string "gsk_..."
+groq_secret_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:legal-rag/groq-api-key-XXXXXX"
+
+# Fargate sizing (0.25 vCPU / 0.5 GB — cheapest option)
+backend_cpu    = 256
+backend_memory = 512
+frontend_cpu   = 256
+frontend_memory = 512

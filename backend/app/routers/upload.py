@@ -18,10 +18,10 @@ from app.models.schemas import SearchResponse
 from app.services.search_service import run_search
 from app.models.schemas import SearchRequest
 
+from app.core.config import settings
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-MAX_PDF_MB = 20
 
 
 def _clean_extracted_text(raw: str) -> str:
@@ -122,8 +122,12 @@ async def search_from_pdf(file: UploadFile = File(...)):
     # Read file
     content = await file.read()
     size_mb = len(content) / (1024 * 1024)
-    if size_mb > MAX_PDF_MB:
-        raise HTTPException(413, f"PDF too large ({size_mb:.1f} MB). Max {MAX_PDF_MB} MB.")
+    if size_mb > settings.MAX_PDF_MB:
+        raise HTTPException(413, f"PDF too large ({size_mb:.1f} MB). Max {settings.MAX_PDF_MB} MB.")
+
+    # Validate PDF magic bytes (%PDF header)
+    if not content[:5].startswith(b"%PDF-"):
+        raise HTTPException(400, "Invalid PDF file: missing PDF header.")
 
     logger.info("PDF upload: %s  %.2f MB", file.filename, size_mb)
 
@@ -134,5 +138,5 @@ async def search_from_pdf(file: UploadFile = File(...)):
     logger.info("Search query from PDF (%d chars): %s…", len(query), query[:120])
 
     # Run through the normal search pipeline
-    request = SearchRequest(query=query, top_k=5)
+    request = SearchRequest(query=query, top_k=settings.TOP_K)
     return await run_search(request)

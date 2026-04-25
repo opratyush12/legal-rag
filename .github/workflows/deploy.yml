@@ -1,0 +1,144 @@
+# ── CD: Build → Push to ECR → Deploy to ECS Fargate ──────────────────────────
+# Runs ONLY on push to main (after CI passes)
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false          # never cancel in-flight deploys
+
+# ── OIDC permissions for AWS auth (no long-lived keys) ────────────────────────
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_BACKEND_REPO: legal-rag-backend
+  ECR_FRONTEND_REPO: legal-rag-frontend
+  ECS_CLUSTER: legal-rag
+  ECS_BACKEND_SERVICE: legal-rag-backend
+  ECS_FRONTEND_SERVICE: legal-rag-frontend
+  ECS_BACKEND_TASK_DEF: infra/task-def-backend.json
+  ECS_FRONTEND_TASK_DEF: infra/task-def-frontend.json
+
+jobs:
+  # ── Gate: run CI checks first ───────────────────────────────────────────────
+  ci:
+    name: CI Gate
+    uses: ./.github/workflows/ci.yml
+
+  # ── Build & push Docker images to ECR ───────────────────────────────────────
+  build-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: ci
+    outputs:
+      backend-image: ${{ steps.backend-uri.outputs.image }}
+      frontend-image: ${{ steps.frontend-uri.outputs.image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: tag
+        run: echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      # ── Backend image ─────────────────────────────────────────────────────
+      - name: Build & push backend
+        id: build-backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:${{ steps.tag.outputs.tag }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output backend image URI
+        id: backend-uri
+        run: |
+          echo "image=${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:${{ steps.tag.outputs.tag }}" >> "$GITHUB_OUTPUT"
+
+      # ── Frontend image ────────────────────────────────────────────────────
+      - name: Build & push frontend
+        id: build-frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:${{ steps.tag.outputs.tag }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output frontend image URI
+        id: frontend-uri
+        run: |
+          echo "image=${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:${{ steps.tag.outputs.tag }}" >> "$GITHUB_OUTPUT"
+
+  # ── Deploy to ECS Fargate ───────────────────────────────────────────────────
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    needs: build-push
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── Backend deploy ────────────────────────────────────────────────────
+      - name: Render backend task definition
+        id: render-backend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_BACKEND_TASK_DEF }}
+          container-name: backend
+          image: ${{ needs.build-push.outputs.backend-image }}
+
+      - name: Deploy backend to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-backend.outputs.task-definition }}
+          service: ${{ env.ECS_BACKEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      # ── Frontend deploy ───────────────────────────────────────────────────
+      - name: Render frontend task definition
+        id: render-frontend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_FRONTEND_TASK_DEF }}
+          container-name: frontend
+          image: ${{ needs.build-push.outputs.frontend-image }}
+
+      - name: Deploy frontend to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-frontend.outputs.task-definition }}
+          service: ${{ env.ECS_FRONTEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true

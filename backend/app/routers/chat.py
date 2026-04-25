@@ -1,11 +1,13 @@
 """app/routers/chat.py — Groq-powered chat with a selected case."""
 import asyncio
+import logging
 from fastapi import APIRouter, HTTPException
 from app.models.schemas import ChatRequest, ChatResponse
 from app.services.groq_service import chat_with_case
 from app.core.index_manager import IndexManager
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("", response_model=ChatResponse)
@@ -24,9 +26,7 @@ async def chat(request: ChatRequest):
             chat_with_case, request.pdf_index, case_text, request.messages
         )
     except RuntimeError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=str(exc),
-        )
+        logger.error("Chat error for %s: %s", request.pdf_index, exc)
+        raise HTTPException(503, "Chat service is temporarily unavailable.")
 
     return ChatResponse(reply=reply, pdf_index=request.pdf_index)

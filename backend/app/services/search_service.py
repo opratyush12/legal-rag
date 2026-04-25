@@ -35,9 +35,9 @@ def _confidence(score: float) -> str:
     CrossEncoder ms-marco scores typically range ~ -10 to +10.
     Map to human-readable confidence.
     """
-    if score >= 4.0:
+    if score >= settings.CONFIDENCE_HIGH_THRESHOLD:
         return "High"
-    elif score >= 0.0:
+    elif score >= settings.CONFIDENCE_MEDIUM_THRESHOLD:
         return "Medium"
     else:
         return "Low"

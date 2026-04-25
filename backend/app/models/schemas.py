@@ -40,13 +40,13 @@ class CasePreviewResponse(BaseModel):
 # ── Chat ───────────────────────────────────────────────────────────────────────
 
 class ChatMessage(BaseModel):
-    role:    str   # "user" | "assistant"
-    content: str
+    role:    str = Field(..., pattern=r"^(user|assistant)$")
+    content: str = Field(..., min_length=1, max_length=10000)
 
 
 class ChatRequest(BaseModel):
-    pdf_index: str
-    messages:  List[ChatMessage]
+    pdf_index: str = Field(..., min_length=1, max_length=500, pattern=r"^[a-zA-Z0-9_\-\.\(\)\[\] ]+$")
+    messages:  List[ChatMessage] = Field(..., min_length=1, max_length=50)
 
 
 class ChatResponse(BaseModel):

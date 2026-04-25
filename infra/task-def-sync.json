@@ -1,0 +1,45 @@
+{
+  "family": "legal-rag-s3-to-efs-sync",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::597093240591:role/legal-rag-prod-ecs-execution",
+  "taskRoleArn": "arn:aws:iam::597093240591:role/legal-rag-prod-ecs-task",
+  "containerDefinitions": [
+    {
+      "name": "sync",
+      "image": "amazon/aws-cli:latest",
+      "essential": true,
+      "command": [
+        "s3", "sync",
+        "s3://legal-rag-pdfs-20260425135127555000000001/index_store/",
+        "/data/index_store/"
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "efs-data",
+          "containerPath": "/data",
+          "readOnly": false
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/legal-rag-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "sync"
+        }
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "efs-data",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-0a4825aae21063276",
+        "transitEncryption": "ENABLED"
+      }
+    }
+  ]
+}

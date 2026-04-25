@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from app.core.storage import storage
+from app.core.config import settings
 from app.core.index_manager import IndexManager
 from app.models.schemas import CasePreviewResponse
 
@@ -29,6 +30,6 @@ async def preview_case(pdf_index: str):
         raise HTTPException(404, f"Case '{pdf_index}' not found in index.")
     return CasePreviewResponse(
         pdf_index=pdf_index,
-        text_preview=" ".join(chunks)[:4000],
+        text_preview=" ".join(chunks)[:settings.PREVIEW_MAX_CHARS],
         available=storage.exists(pdf_index),
     )

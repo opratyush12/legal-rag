@@ -33,20 +33,30 @@ class BaseStorage(ABC):
 
 class LocalStorage(BaseStorage):
     def __init__(self, base_dir: str):
-        self.base = Path(base_dir)
+        self.base = Path(base_dir).resolve()
         logger.info("LocalStorage root: %s", self.base)
+
+    def _is_safe_path(self, p: Path) -> bool:
+        """Prevent path traversal — resolved path must stay inside base dir."""
+        try:
+            return p.resolve().is_relative_to(self.base)
+        except (ValueError, OSError):
+            return False
 
     def get_pdf_path(self, pdf_index: str) -> Optional[Path]:
         # Ensure .pdf extension
         name = pdf_index if pdf_index.endswith(".pdf") else f"{pdf_index}.pdf"
         p = self.base / name
-        if p.exists():
+        if self._is_safe_path(p) and p.exists():
             return p
         # Try without extension if caller passed bare name
         p2 = self.base / pdf_index
-        if p2.exists():
+        if self._is_safe_path(p2) and p2.exists():
             return p2
-        logger.warning("PDF not found locally: %s", p)
+        if not self._is_safe_path(p):
+            logger.warning("Path traversal blocked for: %s", pdf_index)
+        else:
+            logger.warning("PDF not found locally: %s", p)
         return None
 
     def exists(self, pdf_index: str) -> bool:
@@ -79,8 +89,18 @@ class S3Storage(BaseStorage):
     def _cache_path(self, pdf_index: str) -> Path:
         return self.CACHE_DIR / pdf_index
 
+    def _is_safe_path(self, p: Path) -> bool:
+        """Prevent path traversal — resolved path must stay inside cache dir."""
+        try:
+            return p.resolve().is_relative_to(self.CACHE_DIR.resolve())
+        except (ValueError, OSError):
+            return False
+
     def get_pdf_path(self, pdf_index: str) -> Optional[Path]:
         cached = self._cache_path(pdf_index)
+        if not self._is_safe_path(cached):
+            logger.warning("Path traversal blocked for S3 cache: %s", pdf_index)
+            return None
         if cached.exists():
             return cached
         s3_key = self.prefix + pdf_index

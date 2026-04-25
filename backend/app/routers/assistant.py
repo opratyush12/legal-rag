@@ -5,6 +5,7 @@ NOT grounded in a specific case. Uses Constitution reference + LLM knowledge.
 Separate from /api/chat which is always case-specific.
 """
 import asyncio
+import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
@@ -12,6 +13,7 @@ from app.models.schemas import ChatMessage
 from app.services.groq_service import general_legal_chat
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class AssistantRequest(BaseModel):
@@ -29,5 +31,6 @@ async def assistant(request: AssistantRequest):
     try:
         reply = await asyncio.to_thread(general_legal_chat, request.messages)
     except RuntimeError as exc:
-        raise HTTPException(503, str(exc))
+        logger.error("Assistant error: %s", exc)
+        raise HTTPException(503, "Legal assistant is temporarily unavailable.")
     return AssistantResponse(reply=reply)

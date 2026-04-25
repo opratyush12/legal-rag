@@ -52,8 +52,10 @@ class _IndexManager:
             self._index.ntotal, len(self._metadata),
         )
 
-        # Load BM25 if available
-        if bm25_path.exists():
+        # Load BM25 if available and enabled
+        if not settings.USE_BM25:
+            logger.info("BM25 disabled (USE_BM25=false). FAISS-only search active.")
+        elif bm25_path.exists():
             try:
                 with open(bm25_path, "rb") as f:
                     data = pickle.load(f)

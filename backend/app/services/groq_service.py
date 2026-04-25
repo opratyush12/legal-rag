@@ -26,9 +26,7 @@ logger = logging.getLogger(__name__)
 # Tried in order; skips decommissioned models automatically.
 _MODEL_FALLBACKS = [
     settings.GROQ_MODEL,           # primary from .env
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
-    "gemma2-9b-it",
+    *settings.GROQ_FALLBACK_MODELS,
 ]
 
 
@@ -36,7 +34,7 @@ _MODEL_FALLBACKS = [
 def _client() -> Groq:
     if not settings.GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY is not set. Add it to your .env file.")
-    return Groq(api_key=settings.GROQ_API_KEY)
+    return Groq(api_key=settings.GROQ_API_KEY, timeout=30.0, max_retries=2)
 
 
 def _chat_with_fallback(
@@ -211,7 +209,7 @@ def generate_relevance_summary(query: str, case_text: str, pdf_index: str) -> st
 
     prompt = (
         f"User scenario:\n{query}\n\n"
-        f"Case excerpt ({pdf_index}):\n{case_text[:1800]}\n\n"
+        f"Case excerpt ({pdf_index}):\n{case_text[:settings.SUMMARY_CONTEXT_MAX_CHARS]}\n\n"
         "Write the 2-3 sentence relevance summary."
     )
     try:
@@ -220,8 +218,8 @@ def generate_relevance_summary(query: str, case_text: str, pdf_index: str) -> st
                 {"role": "system", "content": _SUMMARY_SYSTEM},
                 {"role": "user",   "content": prompt},
             ],
-            max_tokens=350,
-            temperature=0.2,
+            max_tokens=settings.GROQ_SUMMARY_MAX_TOKENS,
+            temperature=settings.GROQ_SUMMARY_TEMPERATURE,
         )
     except Exception as exc:
         logger.error("Groq summary error (%s): %s", pdf_index, exc)
@@ -236,7 +234,7 @@ def chat_with_case(
     """Deep chat grounded in a specific Supreme Court case."""
     system = _CASE_CHAT_SYSTEM_TMPL.format(
         pdf_index=pdf_index,
-        case_text=case_text[:5500],
+        case_text=case_text[:settings.CHAT_CONTEXT_MAX_CHARS],
     )
     groq_msgs = [{"role": "system", "content": system}]
     for m in messages:
@@ -245,7 +243,7 @@ def chat_with_case(
     return _chat_with_fallback(
         messages=groq_msgs,
         max_tokens=settings.GROQ_MAX_TOKENS,
-        temperature=0.3,
+        temperature=settings.GROQ_CHAT_TEMPERATURE,
     )
 
 
@@ -262,7 +260,7 @@ def general_legal_chat(messages: List[ChatMessage]) -> str:
     return _chat_with_fallback(
         messages=groq_msgs,
         max_tokens=settings.GROQ_MAX_TOKENS,
-        temperature=0.4,
+        temperature=settings.GROQ_ASSISTANT_TEMPERATURE,
     )
 
 
