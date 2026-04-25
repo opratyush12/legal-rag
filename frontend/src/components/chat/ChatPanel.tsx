@@ -29,11 +29,12 @@ export default function ChatPanel() {
 
   const pdfIndex = activeCase?.pdf_index ?? ''
   const messages: ChatMessage[] = chatHistory[pdfIndex] ?? []
+  const messageCount = messages.length
 
   // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, chatLoading])
+  }, [messageCount, chatLoading])
 
   if (!activeCase) return null
 

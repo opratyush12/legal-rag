@@ -69,7 +69,6 @@ class TestChatWithFallback:
              patch("app.services.groq_service.settings") as mock_settings:
             mock_settings.GROQ_MODEL = "old-model"
             mock_settings.GROQ_API_KEY = "fake-key"
-            from app.services.groq_service import _MODEL_FALLBACKS
             result = _chat_with_fallback(
                 messages=[{"role": "user", "content": "hello"}],
                 max_tokens=100,

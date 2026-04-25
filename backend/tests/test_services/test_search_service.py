@@ -1,6 +1,6 @@
 """Tests for app.services.search_service — retrieval pipeline."""
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from app.models.schemas import SearchRequest
 
 

@@ -18,15 +18,22 @@ import { synthesizeSpeech } from '@/lib/api'
 import { stripMarkdownForSpeech } from '@/lib/textUtils'
 
 // Web Speech API type shims (not all TS versions include these in DOM lib)
-type SpeechRecognitionType = typeof window extends { SpeechRecognition: infer T } ? T : any
+
+interface SpeechRecognitionResult {
+  readonly results: { readonly [index: number]: { readonly [index: number]: { transcript: string } } }
+}
+
+interface SpeechRecognitionError {
+  readonly error: string
+}
 
 interface ISpeechRecognition extends EventTarget {
   lang: string
   continuous: boolean
   interimResults: boolean
   maxAlternatives: number
-  onresult: ((ev: any) => void) | null
-  onerror: ((ev: any) => void) | null
+  onresult: ((ev: SpeechRecognitionResult) => void) | null
+  onerror: ((ev: SpeechRecognitionError) => void) | null
   onend: (() => void) | null
   start(): void
   stop(): void
@@ -72,13 +79,13 @@ export function useVoice() {
       recognition.interimResults  = false
       recognition.maxAlternatives = 1
 
-      recognition.onresult = (e: any) => {
+      recognition.onresult = (e: SpeechRecognitionResult) => {
         const transcript = e.results[0][0].transcript
         onResult(transcript)
         setListening(false)
       }
 
-      recognition.onerror = (e: any) => {
+      recognition.onerror = (e: SpeechRecognitionError) => {
         if ((e.error === 'language-not-supported' || e.error === 'no-speech') && !forceLang) {
           // Retry once with Indian English
           startListening(onResult, 'en-IN')

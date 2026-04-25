@@ -1,6 +1,4 @@
 """Tests for app.core.config — settings loading."""
-import pytest
-from unittest.mock import patch
 
 
 class TestSettings:

@@ -1,6 +1,5 @@
 """Tests for /api/cases endpoints — preview and download."""
 import pytest
-from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
 import os

@@ -1,6 +1,6 @@
 """Tests for POST /api/search endpoint."""
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, AsyncMock
 
 
 @pytest.mark.asyncio

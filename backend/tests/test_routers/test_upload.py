@@ -1,6 +1,6 @@
 """Tests for POST /api/upload/pdf endpoint."""
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock
 import io
 
 

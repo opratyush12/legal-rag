@@ -11,7 +11,6 @@ import asyncio
 import re
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
 
 from app.core.index_manager import IndexManager
 from app.models.schemas import SearchResponse
@@ -99,7 +98,7 @@ def _make_query(text: str, max_chars: int = 2000) -> str:
     Convert extracted PDF text into a search query.
     Takes the first substantive portion (skips headers/titles).
     """
-    lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 40]
+    lines = [line.strip() for line in text.split('\n') if len(line.strip()) > 40]
     query = " ".join(lines[:10])
     return query[:max_chars]
 

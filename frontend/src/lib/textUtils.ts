@@ -13,6 +13,7 @@ export function cleanPastedText(raw: string): string {
   return raw
     // Remove PDF escape sequences like \026 \027 \x00 etc.
     .replace(/\\[0-9]{2,3}/g, ' ')
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ')
     // Remove common PDF artifacts
     .replace(/\uFFFD/g, ' ')   // replacement character

@@ -1,6 +1,6 @@
 """Tests for POST /api/chat endpoint."""
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,6 @@
 """Tests for app.core.index_manager — FAISS + BM25 index singleton."""
 import pytest
-from unittest.mock import patch, MagicMock, mock_open
-from pathlib import Path
+from unittest.mock import MagicMock
 
 
 class TestIndexManagerState:

@@ -55,7 +55,7 @@ def check_missing_pdfs(pdfs, pdf_directory):
         else:
             missing.append(pdf)
     
-    print(f"\n📊 Results:")
+    print("\n📊 Results:")
     print(f"   ✅ Existing PDFs: {len(existing)}")
     print(f"   ❌ Missing PDFs: {len(missing)}")
     

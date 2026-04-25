@@ -1,6 +1,5 @@
 """Tests for the /health endpoint and app startup."""
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 @pytest.mark.asyncio

@@ -297,7 +297,8 @@ def expand_query(query: str, n: int = 3) -> list[str]:
             temperature=0.4,
         )
         # Parse JSON array
-        import json, re
+        import json
+        import re
         match = re.search(r'\[.*?\]', result, re.DOTALL)
         if match:
             variants = json.loads(match.group())

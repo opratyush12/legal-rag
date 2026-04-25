@@ -1,9 +1,7 @@
 """Tests for app.core.storage — local and S3 storage backends."""
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from pathlib import Path
 import tempfile
-import os
 
 
 class TestLocalStorage:

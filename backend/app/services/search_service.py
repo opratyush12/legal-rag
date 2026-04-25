@@ -16,8 +16,6 @@ import logging
 from collections import defaultdict
 from typing import List, Tuple
 
-import numpy as np
-
 from app.core.config import settings
 from app.core.index_manager import IndexManager
 from app.core.model_loader import get_embed_model, get_reranker
@@ -82,9 +80,9 @@ def _sync_pipeline(
     for q in expanded_queries:
         # Semantic search
         q_vec = embed_model.encode([q], normalize_embeddings=True).astype("float32")
-        D, I  = IndexManager.index.search(q_vec, settings.FAISS_RETRIEVE_K)
+        D, I_idx = IndexManager.index.search(q_vec, settings.FAISS_RETRIEVE_K)
 
-        for dist, idx in zip(D[0], I[0]):
+        for dist, idx in zip(D[0], I_idx[0]):
             if idx < 0:
                 continue
             meta = IndexManager.metadata[idx]

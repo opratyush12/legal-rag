@@ -1,6 +1,6 @@
 """Tests for app.services.tts_service — text-to-speech."""
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock
 
 
 @pytest.mark.asyncio
