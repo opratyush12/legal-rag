@@ -2,10 +2,10 @@
   "family": "legal-rag-backend",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
-  "executionRoleArn": "arn:aws:iam::597093240591:role/legal-rag-ecs-execution",
-  "taskRoleArn": "arn:aws:iam::597093240591:role/legal-rag-ecs-task",
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::597093240591:role/legal-rag-prod-ecs-execution",
+  "taskRoleArn": "arn:aws:iam::597093240591:role/legal-rag-prod-ecs-task",
   "containerDefinitions": [
     {
       "name": "backend",

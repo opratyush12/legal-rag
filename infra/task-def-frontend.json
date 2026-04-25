@@ -4,7 +4,7 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::597093240591:role/legal-rag-ecs-execution",
+  "executionRoleArn": "arn:aws:iam::597093240591:role/legal-rag-prod-ecs-execution",
   "containerDefinitions": [
     {
       "name": "frontend",
