@@ -36,13 +36,13 @@ class Settings(BaseSettings):
     INDEX_DIR: str = "./index_store"
     INDEX_FILE: str = "faiss.index"
     META_FILE: str = "metadata.pkl"
-    BM25_FILE: str = "bm25.pkl"          # NEW: BM25 index file
+    BM25_FILE: str = "bm25.pkl"  # NEW: BM25 index file
     MAX_INDEX_ROWS: int = 12000
 
     # Chunking — sentence-aware
-    CHUNK_SIZE: int = 1200               # target chars per chunk
-    OVERLAP: int = 200                   # char overlap between chunks
-    MIN_CHUNK_CHARS: int = 100           # discard chunks shorter than this
+    CHUNK_SIZE: int = 1200  # target chars per chunk
+    OVERLAP: int = 200  # char overlap between chunks
+    MIN_CHUNK_CHARS: int = 100  # discard chunks shorter than this
 
     # ── Models ─────────────────────────────────────────────────────────────────
     EMBED_MODEL: str = "BAAI/bge-small-en-v1.5"
@@ -55,17 +55,17 @@ class Settings(BaseSettings):
     TOP_K: int = 5
 
     # Hybrid search weights (must sum to 1.0)
-    SEMANTIC_WEIGHT: float = 0.65        # NEW: FAISS semantic score weight
-    BM25_WEIGHT: float = 0.35            # NEW: BM25 keyword score weight
-    USE_BM25: bool = True                # NEW: toggle hybrid search
+    SEMANTIC_WEIGHT: float = 0.65  # NEW: FAISS semantic score weight
+    BM25_WEIGHT: float = 0.35  # NEW: BM25 keyword score weight
+    USE_BM25: bool = True  # NEW: toggle hybrid search
 
     # Reranking
-    RERANK_CHUNKS: int = 4               # chunks per PDF fed to CrossEncoder
-    CHUNK_COUNT_BOOST: float = 0.15      # NEW: boost per extra matching chunk
+    RERANK_CHUNKS: int = 4  # chunks per PDF fed to CrossEncoder
+    CHUNK_COUNT_BOOST: float = 0.15  # NEW: boost per extra matching chunk
 
     # Query expansion
-    USE_QUERY_EXPANSION: bool = True     # NEW: Groq query expansion toggle
-    QUERY_EXPANSION_VARIANTS: int = 3    # NEW: number of expanded queries
+    USE_QUERY_EXPANSION: bool = True  # NEW: Groq query expansion toggle
+    QUERY_EXPANSION_VARIANTS: int = 3  # NEW: number of expanded queries
 
     # ── Groq ───────────────────────────────────────────────────────────────────
     GROQ_API_KEY: str = ""

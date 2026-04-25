@@ -1,4 +1,5 @@
 """app/routers/chat.py — Groq-powered chat with a selected case."""
+
 import asyncio
 import logging
 from fastapi import APIRouter, HTTPException

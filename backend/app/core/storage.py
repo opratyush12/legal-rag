@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 # ── Base interface ─────────────────────────────────────────────────────────────
 
+
 class BaseStorage(ABC):
     """All storage backends must implement these two methods."""
 
@@ -30,6 +31,7 @@ class BaseStorage(ABC):
 
 
 # ── Local filesystem ───────────────────────────────────────────────────────────
+
 
 class LocalStorage(BaseStorage):
     def __init__(self, base_dir: str):
@@ -65,16 +67,25 @@ class LocalStorage(BaseStorage):
 
 # ── AWS S3 ────────────────────────────────────────────────────────────────────
 
+
 class S3Storage(BaseStorage):
     """
     Downloads PDFs from S3 to a local cache on first access.
     Subsequent requests are served from cache — no repeated downloads.
     """
+
     CACHE_DIR = Path("/tmp/pdf_cache")
 
-    def __init__(self, bucket: str, prefix: str, region: str,
-                 access_key: str = "", secret_key: str = ""):
+    def __init__(
+        self,
+        bucket: str,
+        prefix: str,
+        region: str,
+        access_key: str = "",
+        secret_key: str = "",
+    ):
         import boto3  # lazy import keeps boto3 optional for local dev
+
         self.bucket = bucket
         self.prefix = prefix.rstrip("/") + "/"
         self.s3 = boto3.client(
@@ -123,6 +134,7 @@ class S3Storage(BaseStorage):
 
 
 # ── Factory ────────────────────────────────────────────────────────────────────
+
 
 def build_storage() -> BaseStorage:
     backend = settings.PDF_STORAGE_BACKEND.lower()

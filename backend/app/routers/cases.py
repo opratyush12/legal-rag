@@ -1,4 +1,5 @@
 """app/routers/cases.py — PDF download + text preview."""
+
 import urllib.parse
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
@@ -30,6 +31,6 @@ async def preview_case(pdf_index: str):
         raise HTTPException(404, f"Case '{pdf_index}' not found in index.")
     return CasePreviewResponse(
         pdf_index=pdf_index,
-        text_preview=" ".join(chunks)[:settings.PREVIEW_MAX_CHARS],
+        text_preview=" ".join(chunks)[: settings.PREVIEW_MAX_CHARS],
         available=storage.exists(pdf_index),
     )

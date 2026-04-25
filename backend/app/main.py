@@ -1,6 +1,7 @@
 """
 app/main.py — FastAPI application factory.
 """
+
 from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
@@ -26,7 +27,9 @@ async def lifespan(app: FastAPI):
     if IndexManager.is_ready():
         logger.info("Index loaded successfully.")
     else:
-        logger.warning("Index NOT loaded — search will return 503 until you run build_index.py.")
+        logger.warning(
+            "Index NOT loaded — search will return 503 until you run build_index.py."
+        )
     yield
     logger.info("Shutdown complete.")
 
@@ -47,11 +50,11 @@ app.add_middleware(
 )
 
 app.include_router(search.router, prefix="/api/search", tags=["search"])
-app.include_router(cases.router,  prefix="/api/cases",  tags=["cases"])
-app.include_router(chat.router,   prefix="/api/chat",   tags=["chat"])
-app.include_router(voice.router,     prefix="/api/voice",     tags=["voice"])
+app.include_router(cases.router, prefix="/api/cases", tags=["cases"])
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(voice.router, prefix="/api/voice", tags=["voice"])
 app.include_router(assistant.router, prefix="/api/assistant", tags=["assistant"])
-app.include_router(upload.router,    prefix="/api/upload",    tags=["upload"])
+app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
 
 
 @app.get("/health", tags=["meta"])

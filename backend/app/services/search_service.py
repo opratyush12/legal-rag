@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 # ── Confidence labelling ───────────────────────────────────────────────────────
 
+
 def _confidence(score: float) -> str:
     """
     CrossEncoder ms-marco scores typically range ~ -10 to +10.
@@ -42,6 +43,7 @@ def _confidence(score: float) -> str:
 
 
 # ── Async entry point ──────────────────────────────────────────────────────────
+
 
 async def run_search(request: SearchRequest) -> SearchResponse:
     """Async entry — CPU-heavy work runs in a thread pool."""
@@ -58,6 +60,7 @@ async def run_search(request: SearchRequest) -> SearchResponse:
 
 # ── Main synchronous pipeline ──────────────────────────────────────────────────
 
+
 def _sync_pipeline(
     query: str,
     top_k: int,
@@ -68,12 +71,14 @@ def _sync_pipeline(
     # ── 1. Query expansion ─────────────────────────────────────────────────────
     if settings.USE_QUERY_EXPANSION and settings.GROQ_API_KEY:
         expanded_queries = expand_query(query, n=settings.QUERY_EXPANSION_VARIANTS)
-        logger.info("Query expanded to %d variants: %s", len(expanded_queries), expanded_queries)
+        logger.info(
+            "Query expanded to %d variants: %s", len(expanded_queries), expanded_queries
+        )
     else:
         expanded_queries = [query]
 
     # ── 2. Semantic + BM25 retrieval across all query variants ─────────────────
-    pdf_score:  defaultdict[str, float] = defaultdict(float)
+    pdf_score: defaultdict[str, float] = defaultdict(float)
     pdf_chunks: defaultdict[str, List[str]] = defaultdict(list)
     pdf_chunk_count: defaultdict[str, int] = defaultdict(int)  # for chunk-count boost
 
@@ -86,10 +91,10 @@ def _sync_pipeline(
             if idx < 0:
                 continue
             meta = IndexManager.metadata[idx]
-            pdf  = meta["pdf_index"]
+            pdf = meta["pdf_index"]
             sem_score = float(dist)  # already cosine similarity (IP of normalised vecs)
 
-            pdf_score[pdf]       += sem_score * settings.SEMANTIC_WEIGHT
+            pdf_score[pdf] += sem_score * settings.SEMANTIC_WEIGHT
             pdf_chunk_count[pdf] += 1
             if meta["chunk"] not in pdf_chunks[pdf]:
                 pdf_chunks[pdf].append(meta["chunk"])
@@ -101,8 +106,8 @@ def _sync_pipeline(
                 if chunk_idx >= len(IndexManager.metadata):
                     continue
                 meta = IndexManager.metadata[chunk_idx]
-                pdf  = meta["pdf_index"]
-                pdf_score[pdf]       += bm25_score * settings.BM25_WEIGHT
+                pdf = meta["pdf_index"]
+                pdf_score[pdf] += bm25_score * settings.BM25_WEIGHT
                 pdf_chunk_count[pdf] += 1
                 if meta["chunk"] not in pdf_chunks[pdf]:
                     pdf_chunks[pdf].append(meta["chunk"])
@@ -114,7 +119,7 @@ def _sync_pipeline(
         pdf_score[pdf] += extra_chunks * settings.CHUNK_COUNT_BOOST
 
     # ── 4. Preliminary rank → top-N candidates ─────────────────────────────────
-    ranked     = sorted(pdf_score.items(), key=lambda x: x[1], reverse=True)
+    ranked = sorted(pdf_score.items(), key=lambda x: x[1], reverse=True)
     candidates = [pdf for pdf, _ in ranked[: settings.CANDIDATE_PDFS]]
     logger.info(
         "Candidates after retrieval: %d  (BM25 active: %s)",
@@ -131,13 +136,13 @@ def _sync_pipeline(
     ce_scores = reranker.predict(pairs)
 
     reranked = sorted(zip(candidates, ce_scores), key=lambda x: x[1], reverse=True)
-    final    = reranked[:top_k]
+    final = reranked[:top_k]
     logger.info("Final results after reranking: %d", len(final))
 
     # ── 6. Build result objects ─────────────────────────────────────────────────
     summaries: List[CaseSummary] = []
     for pdf_index, score in final:
-        chunks  = pdf_chunks[pdf_index]
+        chunks = pdf_chunks[pdf_index]
         snippet = chunks[0][:500] if chunks else ""
         context = " ".join(chunks[: settings.RERANK_CHUNKS])
 
@@ -147,14 +152,16 @@ def _sync_pipeline(
             pdf_index=pdf_index,
         )
 
-        summaries.append(CaseSummary(
-            pdf_index=pdf_index,
-            relevance_score=float(score),
-            confidence=_confidence(float(score)),
-            summary=summary,
-            snippet=snippet,
-            available=storage.exists(pdf_index),
-            chunk_hits=pdf_chunk_count[pdf_index],
-        ))
+        summaries.append(
+            CaseSummary(
+                pdf_index=pdf_index,
+                relevance_score=float(score),
+                confidence=_confidence(float(score)),
+                summary=summary,
+                snippet=snippet,
+                available=storage.exists(pdf_index),
+                chunk_hits=pdf_chunk_count[pdf_index],
+            )
+        )
 
     return summaries, len(candidates), expanded_queries

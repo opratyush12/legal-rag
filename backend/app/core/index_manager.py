@@ -18,19 +18,19 @@ logger = logging.getLogger(__name__)
 
 
 def _simple_tokenize(text: str) -> list[str]:
-    return re.findall(r'[a-zA-Z]{2,}', text.lower())
+    return re.findall(r"[a-zA-Z]{2,}", text.lower())
 
 
 class _IndexManager:
-    _index:    Optional[faiss.Index] = None
-    _metadata: Optional[list]        = None
-    _bm25:     Optional[object]      = None   # rank_bm25.BM25Okapi or None
+    _index: Optional[faiss.Index] = None
+    _metadata: Optional[list] = None
+    _bm25: Optional[object] = None  # rank_bm25.BM25Okapi or None
     _bm25_chunks: Optional[list[str]] = None
 
     # ── Lifecycle ──────────────────────────────────────────────────────────────
 
     async def load(self) -> None:
-        idx_path  = settings.index_path
+        idx_path = settings.index_path
         meta_path = settings.meta_path
         bm25_path = settings.bm25_path
 
@@ -49,7 +49,8 @@ class _IndexManager:
 
         logger.info(
             "FAISS ready — %d vectors, %d metadata records.",
-            self._index.ntotal, len(self._metadata),
+            self._index.ntotal,
+            len(self._metadata),
         )
 
         # Load BM25 if available and enabled
@@ -59,7 +60,7 @@ class _IndexManager:
             try:
                 with open(bm25_path, "rb") as f:
                     data = pickle.load(f)
-                self._bm25        = data["bm25"]
+                self._bm25 = data["bm25"]
                 self._bm25_chunks = data["chunks"]
                 logger.info("BM25 index loaded — %d chunks.", len(self._bm25_chunks))
             except Exception as exc:
@@ -104,13 +105,14 @@ class _IndexManager:
 
         # Get top-k indices
         import numpy as np
+
         top_idx = np.argsort(raw_scores)[::-1][:top_k]
         results = []
         for idx in top_idx:
             s = float(raw_scores[idx])
             if s <= 0:
                 break
-            normalised = s / (s + 1.0)   # squeeze to (0, 1)
+            normalised = s / (s + 1.0)  # squeeze to (0, 1)
             results.append((int(idx), normalised))
         return results
 

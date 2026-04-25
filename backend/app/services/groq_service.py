@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # ── Model fallback chain ───────────────────────────────────────────────────────
 # Tried in order; skips decommissioned models automatically.
 _MODEL_FALLBACKS = [
-    settings.GROQ_MODEL,           # primary from .env
+    settings.GROQ_MODEL,  # primary from .env
     *settings.GROQ_FALLBACK_MODELS,
 ]
 
@@ -68,9 +68,7 @@ def _chat_with_fallback(
             last_error = exc
             logger.error("Groq error with %s: %s", model, exc)
             continue
-    raise RuntimeError(
-        f"All Groq models failed. Last: {last_error}. Tried: {tried}."
-    )
+    raise RuntimeError(f"All Groq models failed. Last: {last_error}. Tried: {tried}.")
 
 
 # ── System prompts ─────────────────────────────────────────────────────────────
@@ -202,6 +200,7 @@ Mix Hinglish only if the user writes in Hinglish."""
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
+
 def generate_relevance_summary(query: str, case_text: str, pdf_index: str) -> str:
     """2-3 sentence relevance explanation shown on each search result card."""
     if not settings.GROQ_API_KEY:
@@ -209,14 +208,14 @@ def generate_relevance_summary(query: str, case_text: str, pdf_index: str) -> st
 
     prompt = (
         f"User scenario:\n{query}\n\n"
-        f"Case excerpt ({pdf_index}):\n{case_text[:settings.SUMMARY_CONTEXT_MAX_CHARS]}\n\n"
+        f"Case excerpt ({pdf_index}):\n{case_text[: settings.SUMMARY_CONTEXT_MAX_CHARS]}\n\n"
         "Write the 2-3 sentence relevance summary."
     )
     try:
         return _chat_with_fallback(
             messages=[
                 {"role": "system", "content": _SUMMARY_SYSTEM},
-                {"role": "user",   "content": prompt},
+                {"role": "user", "content": prompt},
             ],
             max_tokens=settings.GROQ_SUMMARY_MAX_TOKENS,
             temperature=settings.GROQ_SUMMARY_TEMPERATURE,
@@ -234,7 +233,7 @@ def chat_with_case(
     """Deep chat grounded in a specific Supreme Court case."""
     system = _CASE_CHAT_SYSTEM_TMPL.format(
         pdf_index=pdf_index,
-        case_text=case_text[:settings.CHAT_CONTEXT_MAX_CHARS],
+        case_text=case_text[: settings.CHAT_CONTEXT_MAX_CHARS],
     )
     groq_msgs = [{"role": "system", "content": system}]
     for m in messages:
@@ -291,7 +290,7 @@ def expand_query(query: str, n: int = 3) -> list[str]:
         result = _chat_with_fallback(
             messages=[
                 {"role": "system", "content": _EXPANSION_SYSTEM.format(n=n)},
-                {"role": "user",   "content": f"Query: {query}"},
+                {"role": "user", "content": f"Query: {query}"},
             ],
             max_tokens=200,
             temperature=0.4,
@@ -299,7 +298,8 @@ def expand_query(query: str, n: int = 3) -> list[str]:
         # Parse JSON array
         import json
         import re
-        match = re.search(r'\[.*?\]', result, re.DOTALL)
+
+        match = re.search(r"\[.*?\]", result, re.DOTALL)
         if match:
             variants = json.loads(match.group())
             # Deduplicate, keep original first
@@ -309,7 +309,7 @@ def expand_query(query: str, n: int = 3) -> list[str]:
                 if isinstance(v, str) and v.lower() not in seen:
                     seen.add(v.lower())
                     filtered.append(v.strip())
-            return filtered[:n + 1]
+            return filtered[: n + 1]
     except Exception as exc:
         logger.warning("Query expansion failed: %s", exc)
 

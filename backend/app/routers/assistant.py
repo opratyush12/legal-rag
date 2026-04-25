@@ -4,6 +4,7 @@ General legal assistant — constitutional questions, rights, procedures.
 NOT grounded in a specific case. Uses Constitution reference + LLM knowledge.
 Separate from /api/chat which is always case-specific.
 """
+
 import asyncio
 import logging
 from fastapi import APIRouter, HTTPException

@@ -26,21 +26,22 @@ logger = logging.getLogger(__name__)
 def _clean_extracted_text(raw: str) -> str:
     """Remove PDF artifacts from extracted text."""
     return (
-        raw
-        .replace('\x00', ' ')
-        .replace('\x0c', '\n')          # form feed → newline
-        .replace('\x0b', ' ')
+        raw.replace("\x00", " ")
+        .replace("\x0c", "\n")  # form feed → newline
+        .replace("\x0b", " ")
         # Remove PDF escape sequences like \026
-        .encode('utf-8', errors='ignore').decode('utf-8')
-        .replace('\ufffd', ' ')
+        .encode("utf-8", errors="ignore")
+        .decode("utf-8")
+        .replace("\ufffd", " ")
         # Collapse whitespace
-        .__class__(re.sub(r'[ \t]{2,}', ' ', raw.replace('\x00', ' ')))
+        .__class__(re.sub(r"[ \t]{2,}", " ", raw.replace("\x00", " ")))
     )
 
 
 def _extract_text_pdfplumber(content: bytes) -> str:
     """Primary extractor — pdfplumber (best for structured legal PDFs)."""
     import pdfplumber
+
     text_parts = []
     with pdfplumber.open(io.BytesIO(content)) as pdf:
         for page in pdf.pages:
@@ -53,6 +54,7 @@ def _extract_text_pdfplumber(content: bytes) -> str:
 def _extract_text_pymupdf(content: bytes) -> str:
     """Fallback extractor — PyMuPDF (faster, handles more PDF types)."""
     import fitz  # PyMuPDF
+
     doc = fitz.open(stream=content, filetype="pdf")
     text_parts = []
     for page in doc:
@@ -80,10 +82,10 @@ def extract_text(content: bytes) -> str:
             )
 
     # Clean artifacts
-    text = re.sub(r'\\[0-9]{2,3}', ' ', text)           # \026 style escapes
-    text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', ' ', text)
-    text = re.sub(r'[ \t]{2,}', ' ', text)
-    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+    text = re.sub(r"\\[0-9]{2,3}", " ", text)  # \026 style escapes
+    text = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", " ", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
 
     if len(text) < 50:
         raise HTTPException(
@@ -98,7 +100,7 @@ def _make_query(text: str, max_chars: int = 2000) -> str:
     Convert extracted PDF text into a search query.
     Takes the first substantive portion (skips headers/titles).
     """
-    lines = [line.strip() for line in text.split('\n') if len(line.strip()) > 40]
+    lines = [line.strip() for line in text.split("\n") if len(line.strip()) > 40]
     query = " ".join(lines[:10])
     return query[:max_chars]
 
@@ -122,7 +124,9 @@ async def search_from_pdf(file: UploadFile = File(...)):
     content = await file.read()
     size_mb = len(content) / (1024 * 1024)
     if size_mb > settings.MAX_PDF_MB:
-        raise HTTPException(413, f"PDF too large ({size_mb:.1f} MB). Max {settings.MAX_PDF_MB} MB.")
+        raise HTTPException(
+            413, f"PDF too large ({size_mb:.1f} MB). Max {settings.MAX_PDF_MB} MB."
+        )
 
     # Validate PDF magic bytes (%PDF header)
     if not content[:5].startswith(b"%PDF-"):

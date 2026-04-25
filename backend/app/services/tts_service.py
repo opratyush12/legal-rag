@@ -22,11 +22,36 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 VOICE_OPTIONS = [
-    {"short_name": "hi-IN-SwaraNeural",   "friendly_name": "Swara (Hindi, Female)",       "locale": "hi-IN", "gender": "Female"},
-    {"short_name": "hi-IN-MadhurNeural",  "friendly_name": "Madhur (Hindi, Male)",         "locale": "hi-IN", "gender": "Male"},
-    {"short_name": "en-IN-NeerjaNeural",  "friendly_name": "Neerja (English-IN, Female)",  "locale": "en-IN", "gender": "Female"},
-    {"short_name": "en-IN-PrabhatNeural", "friendly_name": "Prabhat (English-IN, Male)",   "locale": "en-IN", "gender": "Male"},
-    {"short_name": "en-US-JennyNeural",   "friendly_name": "Jenny (English-US, Female)",   "locale": "en-US", "gender": "Female"},
+    {
+        "short_name": "hi-IN-SwaraNeural",
+        "friendly_name": "Swara (Hindi, Female)",
+        "locale": "hi-IN",
+        "gender": "Female",
+    },
+    {
+        "short_name": "hi-IN-MadhurNeural",
+        "friendly_name": "Madhur (Hindi, Male)",
+        "locale": "hi-IN",
+        "gender": "Male",
+    },
+    {
+        "short_name": "en-IN-NeerjaNeural",
+        "friendly_name": "Neerja (English-IN, Female)",
+        "locale": "en-IN",
+        "gender": "Female",
+    },
+    {
+        "short_name": "en-IN-PrabhatNeural",
+        "friendly_name": "Prabhat (English-IN, Male)",
+        "locale": "en-IN",
+        "gender": "Male",
+    },
+    {
+        "short_name": "en-US-JennyNeural",
+        "friendly_name": "Jenny (English-US, Female)",
+        "locale": "en-US",
+        "gender": "Female",
+    },
 ]
 
 # Fallback order — last entry always works
@@ -70,9 +95,13 @@ async def synthesize(text: str, voice: Optional[str] = None) -> bytes:
         try:
             audio = await _try_synthesize(text, v)
             if v != primary:
-                logger.warning("TTS: primary voice %s failed, used fallback %s", primary, v)
+                logger.warning(
+                    "TTS: primary voice %s failed, used fallback %s", primary, v
+                )
             else:
-                logger.info("TTS: %d chars → %d bytes  voice=%s", len(text), len(audio), v)
+                logger.info(
+                    "TTS: %d chars → %d bytes  voice=%s", len(text), len(audio), v
+                )
             return audio
         except Exception as exc:
             logger.warning("TTS voice %s failed: %s", v, exc)
