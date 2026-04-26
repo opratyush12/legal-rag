@@ -305,3 +305,31 @@ The architecture is intentionally loosely coupled:
 - **Add a new storage backend**: implement `BaseStorage` in `app/core/storage.py` and register in `build_storage()`.
 - **Add new routes**: create a file in `app/routers/` and include it in `app/main.py`.
 - **Add auth**: drop in FastAPI middleware — all routes inherit it.
+
+
+
+
+
+
+C:\Users\PratyushOjha\Downloads\terraform_1.14.9_windows_amd64\terraform.exe apply
+
+
+
+
+# stop 
+
+cd c:\Users\PratyushOjha\Documents\projectPractice\legal-rag
+.\infra\scripts\ecs-stop.ps1
+
+# start
+
+cd c:\Users\PratyushOjha\Documents\projectPractice\legal-rag\infra\terraform
+C:\Users\PratyushOjha\Downloads\terraform_1.14.9_windows_amd64\terraform.exe apply
+
+
+cd c:\Users\PratyushOjha\Documents\projectPractice\legal-rag
+.\infra\scripts\ecs-start.ps1
+
+
+# verify
+aws ecs describe-services --cluster legal-rag --services legal-rag-backend legal-rag-frontend --query "services[*].[serviceName,runningCount,desiredCount]" --output table --region us-east-1 --no-cli-pager
